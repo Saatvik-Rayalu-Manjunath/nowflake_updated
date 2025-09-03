@@ -1,0 +1,4 @@
+Snapshot from DEV → version folder
+UTC: 20250903_144854
+DEV: DEV_DB.PUBLIC
+Tables: ORDERS, CUSTOMERS, PRODUCTS, INVOICES
