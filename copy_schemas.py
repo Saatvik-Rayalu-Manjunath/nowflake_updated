@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# Minimal: snapshot DEV DDLs to versioned folder, then create those tables in PROD (schema/metadata only).
-# No extra validation; idempotent.
-
-import os, sys, re, datetime, pathlib
+import os, sys, re, pathlib
+from datetime import datetime, timezone
 import snowflake.connector
 
 def need(name, default=None):
@@ -24,7 +21,7 @@ def main():
     # Connection (use account *identifier*, no .snowflakecomputing.com)
     user      = "SAATVIKRAYALU"
     password  = "w_vrX7.CVfFNh.8"
-    account   = "JFUVMRO-FB11082"             
+    account   = "JFUVMRO-FB11082"
     warehouse = "COMPUTE_WH"
     role      = "ACCOUNTADMIN"
 
@@ -38,7 +35,7 @@ def main():
     tables = read_tables(tables_file)
 
     # Prepare snapshot folder
-    ts = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     root = pathlib.Path("schema_snapshots") / f"{DEV_DB}.{DEV_SCHEMA}" / ts
     root.mkdir(parents=True, exist_ok=True)
     manifest = root / "_manifest.txt"
