@@ -22,11 +22,11 @@ def read_tables(csv_path: str):
 
 def main():
     # Connection (use account *identifier*, no .snowflakecomputing.com)
-    user      = need("SNOWFLAKE_USER")
-    password  = need("SNOWFLAKE_PASSWORD")
-    account   = need("SNOWFLAKE_ACCOUNT")             # e.g. acct-xyz123.us-west-2
-    warehouse = os.getenv("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH")
-    role      = os.getenv("SNOWFLAKE_ROLE")
+    user      = "SAATVIKRAYALU"
+    password  = "w_vrX7.CVfFNh.8"
+    account   = "JFUVMRO-FB11082"             
+    warehouse = "COMPUTE_WH"
+    role      = "ACCOUNTADMIN"
 
     # Source/Target (unquoted identifiers → uppercase)
     DEV_DB      = os.getenv("DEV_DB", "DEV_DB").upper()
