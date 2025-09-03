@@ -4,32 +4,32 @@ on:
   push:
     branches: [ "main", "demo" ]
     paths:
-      - "tables.csv"          # run when you change the CSV
+      - "tables.csv"
       - ".github/workflows/copy-schemas.yml"
-  workflow_dispatch:          # allow manual runs too
+  workflow_dispatch: {}
+
+# ✅ Let this workflow push commits
+permissions:
+  contents: write
 
 jobs:
   copy:
     runs-on: ubuntu-latest
     env:
-      # Snowflake connection (store these as repo → Settings → Secrets → Actions)
-      SNOWFLAKE_USER: SAATVIKRAYALU
+      SNOWFLAKE_USER:     SAATVIKRAYALU
       SNOWFLAKE_PASSWORD: w_vrX7.CVfFNh.8
-      SNOWFLAKE_ACCOUNT:  JFUVMRO-FB11082
+      SNOWFLAKE_ACCOUNT:  JFUVMRO-FB11082   # account identifier (no .snowflakecomputing.com)
       SNOWFLAKE_WAREHOUSE: COMPUTE_WH
-      # Optional: SNOWFLAKE_ROLE: CICD_PROD_ROLE
-
-      # Source/Target (change defaults here or set as repo variables)
       DEV_DB: DEV_DB
       DEV_SCHEMA: PUBLIC
       PROD_DB: PROD_DB
       PROD_SCHEMA: PUBLIC
-
-      # CSV path
       TABLES_FILE: tables.csv
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true   # ✅ required to push back
 
       - uses: actions/setup-python@v5
         with:
@@ -40,7 +40,50 @@ jobs:
           python -m pip install --upgrade pip
           pip install --quiet snowflake-connector-python
 
-      - name: Copy schemas
+      - name: Copy schemas (creates snapshot folder + table in PROD)
         run: |
           python copy_schemas.py
 
+      # 🔎 Prove the files exist on the runner
+      - name: List snapshot files
+        run: |
+          echo "Branch: ${GITHUB_REF_NAME}"
+          echo "Workspace:"
+          pwd && ls -la
+          echo "Snapshots:"
+          find schema_snapshots -maxdepth 3 -type f | sort || true
+
+      # 💾 Commit & push the schema_snapshots folder back to the same branch
+      - name: Commit & push snapshot
+        run: |
+          git config user.name  "schema-bot"
+          git config user.email "schema-bot@users.noreply.github.com"
+
+          # Ensure Git tracks empty folders if needed
+          if [ ! -d schema_snapshots ]; then
+            echo "No schema_snapshots folder found; nothing to push."
+            exit 0
+          fi
+          find schema_snapshots -type d -empty -exec touch {}/.gitkeep \; || true
+
+          git add -A schema_snapshots/
+
+          if git diff --staged --quiet; then
+            echo "No snapshot changes to commit."
+            exit 0
+          fi
+
+          BRANCH="${GITHUB_REF_NAME}"
+          echo "Pushing to ${BRANCH}"
+
+          git pull --rebase origin "${BRANCH}" || true
+          git commit -m "chore(schema): add schema snapshots"
+          git push origin "HEAD:${BRANCH}"
+
+      # 📦 Fallback: always save snapshots as a build artifact too
+      - name: Upload snapshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-snapshot-${{ github.run_id }}
+          path: schema_snapshots/
