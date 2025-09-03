@@ -1,0 +1,4 @@
+Snapshot from DEV → version folder
+UTC: 20250903_152914
+DEV: DEV_DB.PUBLIC
+Tables: INVOICES_TEST
